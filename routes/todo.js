@@ -42,23 +42,30 @@ router.put('/addtask/:userid', function (req, res) {
     var task = req.body;
     var validatedTask = validateTask(task);
     if (validatedTask.value) {
-        todoList.push({
+        var newTask = {
             id: todoList.length + 1,
             description: task.description,
             done: false
-        });
-        res.json({
-            todoList: todoList
-        });
+        };
+        todoList.push(newTask);
+        res.json(newTask);
     } else {
         //error message
     }
 });
 
-router.put('/edittodo/:id/:userid/:description', function (req, res, next) {
+router.put('/edittodo', function (req, res, next) {
     // get user's todo list with userid param
     // edit todo list item with id param and description param
     // return success or error message.
+    var id = req.body.id;
+    var description = req.body.description;
+
+    todoList.forEach(item => {
+        if (item.id === id) {
+            item.description = description;
+        }
+    });
 });
 
 router.put('/completeorrestoretask/:id/:userid', function (req, res, next) {
