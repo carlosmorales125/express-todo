@@ -23,8 +23,12 @@ app.use(function(req, res, next) {
     next();
 });
 
+// Connect to MongoDB hosted on mlab using Mongoose
+var mongoose = require('mongoose');
+mongoose.connect('mongodb://todolistdbuser:7LPeQGik5F7JueN@ds149613.mlab.com:49613/express-todo-list');
+
 app.use('/', indexRouter);
-app.use('/users', usersRouter);
+app.use('/api/users', usersRouter);
 app.use('/api/todo', todoRouter);
 
 module.exports = app;

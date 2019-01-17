@@ -1,6 +1,8 @@
 var express = require('express');
 var Joi = require('joi');
 var router = express.Router();
+var User = require('../models/User');
+var TodoList = require('../models/TodoList');
 
 var todoList = [
     {
@@ -79,6 +81,5 @@ router.delete('/deletetask/:id/:userid', function (req, res, next) {
     // delete todo list item with id param
     // return success or error message.
 });
-
 
 module.exports = router;

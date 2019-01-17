@@ -1,1 +1,9 @@
-// Todo: learn more about mongoose models and create User and TodoList
+var mongoose = require('mongoose');
+var Schema = mongoose.Schema;
+
+var TodoListSchema = new Schema({
+    userId: Number,
+    todoList: []
+});
+
+module.exports = mongoose.model('TodoList', TodoListSchema);
