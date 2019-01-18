@@ -2,7 +2,7 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
 var TodoListSchema = new Schema({
-    userId: Number,
+    userId: String,
     todoList: []
 });
 
