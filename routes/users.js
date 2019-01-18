@@ -62,7 +62,7 @@ router.post('/createuser', function(req, res, next) {
                                 });
                                 newTodoList
                                     .save()
-                                    .then(function (todoList, user) {
+                                    .then(function (todoList) {
                                         console.log(todoList);
                                         res.send(user);
                                     })
