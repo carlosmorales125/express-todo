@@ -1,58 +1,58 @@
 var express = require('express');
 var Joi = require('joi');
 var router = express.Router();
-var User = require('../models/User');
 var TodoList = require('../models/TodoList');
 
-var todoList = [
-    {
-        id: 0,
-        description: "this comes from the express app boii!",
-        done: false
-    },
-    {
-        id: 1,
-        description: "this comes from the express app boii again and again!",
-        done: false
-    },
-    {
-        id: 2,
-        description: "testing nodemon, one more time",
-        done: false
-    }
-];
-
-function validateTask (task) {
+router.get('/todolist/:userId', function (req, res) {
     var schema = {
-        description: Joi.string().required(),
+        userId: Joi.string().min(3).required()
     };
-    return Joi.validate(task, schema);
-}
 
-router.get('/todolist/:userid', function (req, res) {
-    // get user's todo list with userid param
-    // send todo list or error message
-    res.json({
-        todoList: todoList
-    });
+    var validateUserId = Joi.validate({userId: req.params.userId}, schema);
+
+    if (validateUserId.value) {
+        var userId = req.params.userId;
+
+        TodoList.find({ userId: userId })
+            .then(function (list) {
+                res.json({
+                    list: list
+                });
+            })
+            .catch(function (err) {
+                res.status(500).send(err);
+            });
+    } else {
+        res.status(400).send('The userId is required for this api call.');
+    }
 });
 
-router.put('/addtask/:userid', function (req, res) {
-    // get user's todo list with userid param
-    // add todo list item with task and userid param and description param
-    // return success or error message.
-    var task = req.body;
-    var validatedTask = validateTask(task);
+router.put('/addtask', function (req, res) {
+    var schema = {
+        userId: Joi.string().required(),
+        description: Joi.string().min(3).required()
+    };
+
+    var validatedTask = Joi.validate(req.body, schema);
+
     if (validatedTask.value) {
+        var userId = req.body.userId;
+        var description = req.body.description;
+
         var newTask = {
-            id: todoList.length + 1,
-            description: task.description,
+            description: description,
             done: false
         };
-        todoList.push(newTask);
-        res.json(newTask);
+
+        TodoList.updateOne({ userId: userId }, { $push: { todoList: newTask } })
+            .then(function () {
+                res.sendStatus(200);
+            })
+            .catch(function (err) {
+                res.status(500).send(err);
+            });
     } else {
-        //error message
+        res.status(400).send(validatedTask.error);
     }
 });
 

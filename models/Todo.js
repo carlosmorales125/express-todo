@@ -6,4 +6,4 @@ var TodoSchema = new Schema({
     done: Boolean
 });
 
-module.exports = mongoose.model('Todo', TodoSchema);
+module.exports = TodoSchema;
