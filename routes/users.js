@@ -1,12 +1,31 @@
 var express = require('express');
 var router = express.Router();
-var bcrypt = require('bcryptjs');
+var LocalStrategy = require('passport-local').Strategy;
 var passport = require('passport');
 var Joi = require('joi');
 var User = require('../models/User');
 var TodoList = require('../models/TodoList');
 
-router.post('/createuser', function(req, res, next) {
+passport.use(new LocalStrategy(function(username, password, done) {
+        User.findOne({ username: username }, function (err, user) {
+            if (err) {
+                return done(err);
+            }
+
+            if (!user) {
+                return done(null, false);
+            }
+
+            if (!user.verifyPassword(password)) {
+                return done(null, false);
+            }
+
+            return done(null, user);
+        });
+    }
+));
+
+router.post('/createuser', function(req, res) {
     var schema = {
         name: Joi.string().min(2).required(),
         email: Joi.string().email({ minDomainAtoms: 2 }).required(),
@@ -33,35 +52,25 @@ router.post('/createuser', function(req, res, next) {
                         email: email,
                         password: password
                     });
-                    bcrypt.genSalt(10, function (err, salt) {
-                        bcrypt.hash(newUser.password, salt, function (err, hash) {
-                            if (err) {
-                                res.send(500).send('internal error');
-                                throw err;
-                            }
-                            newUser.password = hash;
-                            newUser
+                    newUser
+                        .save()
+                        .then(function (user) {
+                            //create the user's first todo list
+                            var newTodoList = new TodoList({
+                                userId: user._id
+                            });
+                            newTodoList
                                 .save()
-                                .then(function (user) {
-                                    //create the user's first todo list
-                                    console.log('this is a new user', user);
-                                    var newTodoList = new TodoList({
-                                        userId: user._id
-                                    });
-                                    newTodoList
-                                        .save()
-                                        .then(function (todoList) {
-                                            res.send(user);
-                                        })
-                                        .catch(function (err) {
-                                            res.status(500).send(err);
-                                        });
+                                .then(function () {
+                                    res.send(user);
                                 })
                                 .catch(function (err) {
-                                    res.status(500).send(err)
+                                    res.status(500).send(err);
                                 });
+                        })
+                        .catch(function (err) {
+                            res.status(500).send(err);
                         });
-                    });
                 }
             });
         })
@@ -70,19 +79,10 @@ router.post('/createuser', function(req, res, next) {
         });
 });
 
-router.post('/auth', function (req, res, next) {
-    var schema = {
-        email: Joi.string().email({ minDomainAtoms: 2 }).required(),
-        password: Joi.string().min(6).required()
-    };
-
-    Joi.validate(req.body, schema)
-        .then(function (value) {
-
-        })
-        .catch(function (err) {
-            res.status(400).send(err);
-        })
+router.post('/login',
+    passport.authenticate('local', { failureRedirect: '/login' }),
+    function (req, res) {
+        res.sendStatus(200);
 });
 
 module.exports = router;
