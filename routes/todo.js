@@ -2,8 +2,9 @@ var express = require('express');
 var Joi = require('joi');
 var router = express.Router();
 var TodoList = require('../models/TodoList');
+var passport = require('passport');
 
-router.get('/todolist/:userId', function (req, res) {
+router.get('/todolist/:userId', passport.authenticate('jwt', { session: false }), function (req, res) {
     var schema = {
         userId: Joi.string().min(3).required()
     };
@@ -27,7 +28,7 @@ router.get('/todolist/:userId', function (req, res) {
         });
 });
 
-router.put('/addtask', function (req, res) {
+router.put('/addtask', passport.authenticate('jwt', { session: false }), function (req, res) {
     var schema = {
         userId: Joi.string().required(),
         description: Joi.string().min(3).required()
@@ -56,7 +57,7 @@ router.put('/addtask', function (req, res) {
         });
 });
 
-router.put('/edittodo', function (req, res) {
+router.put('/edittodo', passport.authenticate('jwt', { session: false }), function (req, res) {
     var schema = {
         userId: Joi.string().required(),
         id: Joi.string().required(),
@@ -88,7 +89,7 @@ router.put('/edittodo', function (req, res) {
         });
 });
 
-router.put('/completeorrestoretask', function (req, res) {
+router.put('/completeorrestoretask', passport.authenticate('jwt', { session: false }), function (req, res) {
     var schema = {
         userId: Joi.string().required(),
         id: Joi.string().required(),
@@ -120,7 +121,7 @@ router.put('/completeorrestoretask', function (req, res) {
         });
 });
 
-router.delete('/deletetask/:id/:userId', function (req, res) {
+router.delete('/deletetask/:id/:userId', passport.authenticate('jwt', { session: false }), function (req, res) {
     var schema = {
         userId: Joi.string().required(),
         id: Joi.string().required()

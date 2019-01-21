@@ -1,13 +1,22 @@
 var express = require('express');
 var router = express.Router();
-var LocalStrategy = require('passport-local').Strategy;
 var passport = require('passport');
+var LocalStrategy = require('passport-local').Strategy;
 var Joi = require('joi');
 var User = require('../models/User');
 var TodoList = require('../models/TodoList');
 
-passport.use(new LocalStrategy(function(username, password, done) {
-        User.findOne({ username: username }, function (err, user) {
+var jwt = require('jsonwebtoken');
+var config = require('../config');
+var JwtStrategy = require('passport-jwt').Strategy;
+var ExtractJwt = require('passport-jwt').ExtractJwt;
+
+passport.use(new LocalStrategy({
+        usernameField: 'email',
+        passwordField: 'password'
+    },
+    function(email, password, done) {
+        User.findOne({ email: email }, function (err, user) {
             if (err) {
                 return done(err);
             }
@@ -24,6 +33,22 @@ passport.use(new LocalStrategy(function(username, password, done) {
         });
     }
 ));
+
+var opts = {}
+opts.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();
+opts.secretOrKey = config.secret;
+passport.use(new JwtStrategy(opts, function(jwt_payload, done) {
+    User.findOne({id: jwt_payload.sub}, function(err, user) {
+        if (err) {
+            return done(err, false);
+        }
+        if (user) {
+            return done(null, user);
+        } else {
+            return done(null, false);
+        }
+    });
+}));
 
 router.post('/createuser', function(req, res) {
     var schema = {
@@ -62,7 +87,7 @@ router.post('/createuser', function(req, res) {
                             newTodoList
                                 .save()
                                 .then(function () {
-                                    res.send(user);
+                                    res.sendStatus(200);
                                 })
                                 .catch(function (err) {
                                     res.status(500).send(err);
@@ -79,10 +104,36 @@ router.post('/createuser', function(req, res) {
         });
 });
 
-router.post('/login',
-    passport.authenticate('local', { failureRedirect: '/login' }),
-    function (req, res) {
-        res.sendStatus(200);
+router.post('/login', function (req, res) {
+    passport.authenticate('local', { session: false }, function (err, user) {
+        if (err || !user) {
+            return res.status(400).send(err);
+        }
+        req.login(user, {session: false}, function(err) {
+            if (err) {
+                res.status(500).send(err);
+            }
+
+            var token = jwt.sign(user.toJSON(), config.secret, {
+                expiresIn: 86400
+            });
+
+            // everything but the password
+            var userObject = {
+                _id: user.get('_id'),
+                name: user.get('name'),
+                email: user.get('email'),
+                token: token
+            };
+
+            return res.json(userObject);
+        });
+    })(req, res);
+});
+
+
+router.get('/testingjwt', passport.authenticate('jwt', { session: false }), function (req, res) {
+    res.send('look ma! im wide open!');
 });
 
 module.exports = router;
