@@ -3,7 +3,7 @@ var Schema = mongoose.Schema;
 
 var UserSchema = new Schema({
     name: String,
-    username: String
+    email: String,
 });
 
 UserSchema.plugin(require('mongoose-bcrypt'));

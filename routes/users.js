@@ -61,6 +61,7 @@ router.post('/createuser', function(req, res) {
     Joi.validate(req.body, schema)
         .then(function () {
             // Grab variables from request body
+            console.log(req.body);
             var name = req.body.name;
             var email = req.body.email;
             var password = req.body.password;
@@ -129,11 +130,6 @@ router.post('/login', function (req, res) {
             return res.json(userObject);
         });
     })(req, res);
-});
-
-
-router.get('/testingjwt', passport.authenticate('jwt', { session: false }), function (req, res) {
-    res.send('look ma! im wide open!');
 });
 
 module.exports = router;
