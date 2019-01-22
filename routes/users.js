@@ -61,7 +61,6 @@ router.post('/createuser', function(req, res) {
     Joi.validate(req.body, schema)
         .then(function () {
             // Grab variables from request body
-            console.log(req.body);
             var name = req.body.name;
             var email = req.body.email;
             var password = req.body.password;
@@ -76,7 +75,8 @@ router.post('/createuser', function(req, res) {
                     var newUser = new User({
                         name: name,
                         email: email,
-                        password: password
+                        password: password,
+                        token: 'fakefornow'
                     });
                     newUser
                         .save()
@@ -119,17 +119,67 @@ router.post('/login', function (req, res) {
                 expiresIn: 86400
             });
 
-            // everything but the password
-            var userObject = {
-                _id: user.get('_id'),
-                name: user.get('name'),
-                email: user.get('email'),
-                token: token
-            };
+            var _id = user.get('_id');
 
-            return res.json(userObject);
+            User.updateOne({_id: _id}, { $set: { token: token } })
+                .then(function () {
+                    // everything but the password
+                    var userObject = {
+                        _id: _id,
+                        name: user.get('name'),
+                        email: user.get('email'),
+                        token: token
+                    };
+
+                    return res.json(userObject);
+                })
+                .catch(function (err) {
+                    res.status(500).send(err);
+                });
         });
     })(req, res);
+});
+
+router.post('/changename', passport.authenticate('jwt', { session: false }), function (req, res) {
+    var schema = {
+        description: Joi.string().min(2).required(),
+        id: Joi.string().min(6).required()
+    };
+
+    Joi.validate(req.body, schema)
+        .then(function () {
+            var name = req.body.description;
+            var id = req.body.id;
+
+            User.updateOne({
+                _id: id
+                },
+                {
+                    $set: { name: name }
+                })
+                .then(function () {
+                    User.findOne({ _id: id })
+                        .then(function (user) {
+                            // everything but the password
+                            var userObject = {
+                                _id: user.get('_id'),
+                                name: user.get('name'),
+                                email: user.get('email'),
+                                token: user.get('token')
+                            };
+                            res.status(200).json(userObject);
+                        })
+                        .catch(function (err) {
+                            res.status(500).send(err);
+                        });
+                })
+                .catch(function (err) {
+                    res.status(500).send(err);
+                });
+        })
+        .catch(function (err) {
+            res.status(400).send(err);
+        });
 });
 
 module.exports = router;
