@@ -1,9 +1,9 @@
-var mongoose = require('mongoose');
-var Schema = mongoose.Schema;
+import mongoose from 'mongoose';
+const Schema = mongoose.Schema;
 
-var TodoSchema = new Schema({
+const TodoSchema = new Schema({
     description: String,
     done: Boolean
 });
 
-module.exports = TodoSchema;
+export default TodoSchema;

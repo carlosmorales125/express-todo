@@ -1,12 +1,15 @@
-var mongoose = require('mongoose');
-var Schema = mongoose.Schema;
+import mongoose from 'mongoose';
+import MongooseBcrypt from 'mongoose-bcrypt';
+const Schema = mongoose.Schema;
 
-var UserSchema = new Schema({
+const UserSchema = new Schema({
     name: String,
     email: String,
     token: String
 });
 
-UserSchema.plugin(require('mongoose-bcrypt'));
+UserSchema.plugin(MongooseBcrypt);
 
-module.exports = mongoose.model('User', UserSchema);
+const User = mongoose.model('User', UserSchema);
+
+export default User;

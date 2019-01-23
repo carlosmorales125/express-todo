@@ -1,10 +1,12 @@
-var mongoose = require('mongoose');
-var Schema = mongoose.Schema;
-var TodoSchema = require('./Todo');
+import mongoose from 'mongoose';
+import TodoSchema from './Todo';
+const Schema = mongoose.Schema;
 
-var TodoListSchema = new Schema({
+const  TodoListSchema = new Schema({
     userId: String,
     todoList: [TodoSchema]
 });
 
-module.exports = mongoose.model('TodoList', TodoListSchema);
+const TodoList = mongoose.model('TodoList', TodoListSchema);
+
+export default TodoList;
