@@ -1,22 +1,24 @@
-var express = require('express');
-var router = express.Router();
-var passport = require('passport');
-var LocalStrategy = require('passport-local').Strategy;
-var Joi = require('joi');
-var User = require('../models/User');
-var TodoList = require('../models/TodoList');
+import express from 'express';
+import Joi from 'joi';
+import passport from 'passport';
+import passportLocal from 'passport-local';
+import passportJwt from 'passport-jwt';
+import jwt from 'jsonwebtoken';
+import User from '../models/User';
+import TodoList from '../models/TodoList';
+import config from '../config';
 
-var jwt = require('jsonwebtoken');
-var config = require('../config');
-var JwtStrategy = require('passport-jwt').Strategy;
-var ExtractJwt = require('passport-jwt').ExtractJwt;
+const router = express.Router();
+const LocalStrategy = passportLocal.Strategy;
+const JwtStrategy = passportJwt.Strategy;
+const ExtractJwt = passportJwt.ExtractJwt;
 
 passport.use(new LocalStrategy({
         usernameField: 'email',
         passwordField: 'password'
     },
-    function(email, password, done) {
-        User.findOne({ email: email }, function (err, user) {
+    (email, password, done) => {
+        User.findOne({ email: email }, (err, user) => {
             if (err) {
                 return done(err);
             }
@@ -34,11 +36,11 @@ passport.use(new LocalStrategy({
     }
 ));
 
-var opts = {}
+const opts = {};
 opts.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();
 opts.secretOrKey = config.secret;
-passport.use(new JwtStrategy(opts, function(jwt_payload, done) {
-    User.findOne({id: jwt_payload.sub}, function(err, user) {
+passport.use(new JwtStrategy(opts, (jwt_payload, done) => {
+    User.findOne({id: jwt_payload.sub}, (err, user) => {
         if (err) {
             return done(err, false);
         }
@@ -50,8 +52,8 @@ passport.use(new JwtStrategy(opts, function(jwt_payload, done) {
     });
 }));
 
-router.post('/createuser', function(req, res) {
-    var schema = {
+router.post('/createuser', (req, res) => {
+    const schema = {
         name: Joi.string().min(2).required(),
         email: Joi.string().email({ minDomainAtoms: 2 }).required(),
         password: Joi.string().min(6).required(),
@@ -59,20 +61,18 @@ router.post('/createuser', function(req, res) {
     };
 
     Joi.validate(req.body, schema)
-        .then(function () {
+        .then(() => {
             // Grab variables from request body
-            var name = req.body.name;
-            var email = req.body.email;
-            var password = req.body.password;
+            const { name, email, password } = req.body;
 
             // Make sure no other users have entered this email;
             User.findOne({email: email})
-                .then(function (user) {
+                .then(user => {
                 if (user) {
                     res.status(409).send('Email already exists');
                 } else {
                     // init new user
-                    var newUser = new User({
+                    let newUser = new User({
                         name: name,
                         email: email,
                         password: password,
@@ -80,51 +80,51 @@ router.post('/createuser', function(req, res) {
                     });
                     newUser
                         .save()
-                        .then(function (user) {
+                        .then(user => {
                             //create the user's first todo list
-                            var newTodoList = new TodoList({
+                            let newTodoList = new TodoList({
                                 userId: user._id
                             });
                             newTodoList
                                 .save()
-                                .then(function () {
+                                .then(() => {
                                     res.sendStatus(200);
                                 })
-                                .catch(function (err) {
+                                .catch(err => {
                                     res.status(500).send(err);
                                 });
                         })
-                        .catch(function (err) {
+                        .catch(err => {
                             res.status(500).send(err);
                         });
                 }
             });
         })
-        .catch(function (err) {
+        .catch(err => {
             res.status(400).send(err);
         });
 });
 
-router.post('/login', function (req, res) {
-    passport.authenticate('local', { session: false }, function (err, user) {
+router.post('/login', (req, res) => {
+    passport.authenticate('local', { session: false }, (err, user) => {
         if (err || !user) {
             return res.status(400).send(err);
         }
-        req.login(user, {session: false}, function(err) {
+        req.login(user, {session: false}, err => {
             if (err) {
                 res.status(500).send(err);
             }
 
-            var token = jwt.sign(user.toJSON(), config.secret, {
+            const token = jwt.sign(user.toJSON(), config.secret, {
                 expiresIn: 86400
             });
 
-            var _id = user.get('_id');
+            const _id = user.get('_id');
 
             User.updateOne({_id: _id}, { $set: { token: token } })
-                .then(function () {
+                .then(() => {
                     // everything but the password
-                    var userObject = {
+                    let userObject = {
                         _id: _id,
                         name: user.get('name'),
                         email: user.get('email'),
@@ -133,23 +133,22 @@ router.post('/login', function (req, res) {
 
                     return res.json(userObject);
                 })
-                .catch(function (err) {
+                .catch(err => {
                     res.status(500).send(err);
                 });
         });
     })(req, res);
 });
 
-router.post('/changename', passport.authenticate('jwt', { session: false }), function (req, res) {
-    var schema = {
+router.post('/changename', passport.authenticate('jwt', { session: false }), (req, res) => {
+    const schema = {
         description: Joi.string().min(2).required(),
         id: Joi.string().min(6).required()
     };
 
     Joi.validate(req.body, schema)
-        .then(function () {
-            var name = req.body.description;
-            var id = req.body.id;
+        .then(() => {
+            const { name, id } = req.body;
 
             User.updateOne({
                 _id: id
@@ -157,11 +156,11 @@ router.post('/changename', passport.authenticate('jwt', { session: false }), fun
                 {
                     $set: { name: name }
                 })
-                .then(function () {
+                .then(() => {
                     User.findOne({ _id: id })
-                        .then(function (user) {
+                        .then(user => {
                             // everything but the password
-                            var userObject = {
+                            let userObject = {
                                 _id: user.get('_id'),
                                 name: user.get('name'),
                                 email: user.get('email'),
@@ -169,17 +168,17 @@ router.post('/changename', passport.authenticate('jwt', { session: false }), fun
                             };
                             res.status(200).json(userObject);
                         })
-                        .catch(function (err) {
+                        .catch(err => {
                             res.status(500).send(err);
                         });
                 })
-                .catch(function (err) {
+                .catch(err => {
                     res.status(500).send(err);
                 });
         })
-        .catch(function (err) {
+        .catch(err => {
             res.status(400).send(err);
         });
 });
 
-module.exports = router;
+export { router as usersRouter };

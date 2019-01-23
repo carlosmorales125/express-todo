@@ -1,74 +1,76 @@
-var express = require('express');
-var Joi = require('joi');
-var router = express.Router();
-var TodoList = require('../models/TodoList');
-var passport = require('passport');
+import express from 'express';
+import Joi from 'joi';
+import passport from 'passport';
+import TodoList from '../models/TodoList';
 
-router.get('/todolist/:userId', passport.authenticate('jwt', { session: false }), function (req, res) {
-    var schema = {
+const router = express.Router();
+
+
+router.get('/todolist/:userId', passport.authenticate('jwt', { session: false }), (req, res) => {
+    const schema = {
         userId: Joi.string().min(3).required()
     };
 
     Joi.validate({userId: req.params.userId}, schema)
-        .then(function () {
-            var userId = req.params.userId;
+        .then(() => {
+            const { userId } = req.params;
 
             TodoList.find({ userId: userId })
-                .then(function (list) {
+                .then(list => {
                     res.json({
                         list: list
                     });
                 })
-                .catch(function (err) {
+                .catch(err => {
                     res.status(500).send(err);
                 });
         })
-        .catch(function (err) {
+        .catch(err => {
             res.status(400).send(err);
         });
 });
 
-router.put('/addtask', passport.authenticate('jwt', { session: false }), function (req, res) {
-    var schema = {
+router.put('/addtask', passport.authenticate('jwt', { session: false }), (req, res) => {
+    const schema = {
         userId: Joi.string().required(),
         description: Joi.string().min(3).required()
     };
 
     Joi.validate(req.body, schema)
-        .then(function () {
-            var userId = req.body.userId;
-            var description = req.body.description;
+        .then(() => {
+            const userId = req.body.userId;
+            const description = req.body.description;
 
-            var newTask = {
+            const newTask = {
                 description: description,
                 done: false
             };
 
             TodoList.updateOne({ userId: userId }, { $push: { todoList: newTask } })
-                .then(function () {
+                .then(() => {
                     res.sendStatus(200);
                 })
-                .catch(function (err) {
+                .catch(err => {
                     res.status(500).send(err);
                 });
         })
-        .catch(function (err) {
+        .catch(err => {
             res.status(400).send(err);
         });
 });
 
-router.put('/edittodo', passport.authenticate('jwt', { session: false }), function (req, res) {
-    var schema = {
+router.put('/edittodo', passport.authenticate('jwt', { session: false }), (req, res) => {
+    const schema = {
         userId: Joi.string().required(),
         id: Joi.string().required(),
         description: Joi.string().min(3).required()
     };
 
     Joi.validate(req.body, schema)
-        .then(function () {
-            var userId = req.body.userId;
-            var id = req.body.id;
-            var description = req.body.description;
+        .then(() => {
+            const userId = req.body.userId;
+            const id = req.body.id;
+            const description = req.body.description;
 
             TodoList.updateOne({
                     userId: userId,
@@ -77,30 +79,30 @@ router.put('/edittodo', passport.authenticate('jwt', { session: false }), functi
                 {
                     $set: { 'todoList.$.description': description }
                 })
-                .then(function () {
+                .then(() => {
                     res.sendStatus(200);
                 })
-                .catch(function (err) {
+                .catch(err => {
                     res.status(500).send(err);
                 });
         })
-        .catch(function (err) {
+        .catch(err => {
             res.status(400).send(err);
         });
 });
 
-router.put('/completeorrestoretask', passport.authenticate('jwt', { session: false }), function (req, res) {
-    var schema = {
+router.put('/completeorrestoretask', passport.authenticate('jwt', { session: false }), (req, res) => {
+    const schema = {
         userId: Joi.string().required(),
         id: Joi.string().required(),
         done: Joi.boolean().required()
     };
 
     Joi.validate(req.body, schema)
-        .then(function () {
-            var userId = req.body.userId;
-            var id = req.body.id;
-            var done = req.body.done;
+        .then(() => {
+            const userId = req.body.userId;
+            const id = req.body.id;
+            const done = req.body.done;
 
             TodoList.updateOne({
                     userId: userId,
@@ -109,28 +111,27 @@ router.put('/completeorrestoretask', passport.authenticate('jwt', { session: fal
                 {
                     $set: { 'todoList.$.done': done }
                 })
-                .then(function () {
+                .then(() => {
                     res.sendStatus(200);
                 })
-                .catch(function (err) {
+                .catch(err => {
                     res.status(500).send(err);
                 });
         })
-        .catch(function (err) {
+        .catch(err => {
             res.status(400).send(err);
         });
 });
 
-router.delete('/deletetask/:id/:userId', passport.authenticate('jwt', { session: false }), function (req, res) {
-    var schema = {
+router.delete('/deletetask/:id/:userId', passport.authenticate('jwt', { session: false }), (req, res) => {
+    const schema = {
         userId: Joi.string().required(),
         id: Joi.string().required()
     };
 
     Joi.validate(req.params, schema)
-        .then(function () {
-            var userId = req.params.userId;
-            var id = req.params.id;
+        .then(() => {
+            const { userId, id } = req.body;
 
             TodoList.updateOne({
                     userId: userId
@@ -138,16 +139,16 @@ router.delete('/deletetask/:id/:userId', passport.authenticate('jwt', { session:
                 {
                     $pull: { todoList: { '_id': id } }
                 })
-                .then(function () {
+                .then(() => {
                     res.sendStatus(200);
                 })
-                .catch(function (err) {
+                .catch(err => {
                     res.status(500).send(err);
                 });
         })
-        .catch(function (err) {
+        .catch(err => {
             res.status(400).send(err);
         });
 });
 
-module.exports = router;
+export { router as todoRouter };

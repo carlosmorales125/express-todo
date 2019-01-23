@@ -1,15 +1,13 @@
-//var express = require('express');
 import express from 'express';
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
-var cors = require('cors');
+import path from 'path';
+import cookieParser from 'cookie-parser';
+import logger from 'morgan';
+import cors from 'cors';
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
-var todoRouter = require('./routes/todo');
+import { usersRouter } from './routes/users';
+import { todoRouter } from './routes/todo';
 
-var app = express();
+let app = express();
 
 app.use(logger('dev'));
 app.use(express.json());
@@ -24,11 +22,10 @@ app.use(cors({
 }));
 
 // Connect to MongoDB hosted on mlab using Mongoose
-var mongoose = require('mongoose');
+const mongoose = require('mongoose');
 mongoose.connect('mongodb://todolistdbuser:7LPeQGik5F7JueN@ds149613.mlab.com:49613/express-todo-list');
 
-app.use('/', indexRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/todo', todoRouter);
 
-module.exports = app;
+export default app;
