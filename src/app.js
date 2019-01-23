@@ -1,4 +1,5 @@
-var express = require('express');
+//var express = require('express');
+import express from 'express';
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
