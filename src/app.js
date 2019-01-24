@@ -3,6 +3,7 @@ import path from 'path';
 import cookieParser from 'cookie-parser';
 import logger from 'morgan';
 import cors from 'cors';
+import config from './config';
 
 import { usersRouter } from './routes/users';
 import { todoRouter } from './routes/todo';
@@ -15,6 +16,9 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Passport JS Strategies
+import './passport';
+
 // Enable CORS
 app.use(cors({
     origin: 'http://localhost:8080',
@@ -23,7 +27,7 @@ app.use(cors({
 
 // Connect to MongoDB hosted on mlab using Mongoose
 const mongoose = require('mongoose');
-mongoose.connect('mongodb://todolistdbuser:7LPeQGik5F7JueN@ds149613.mlab.com:49613/express-todo-list');
+mongoose.connect(config.db);
 
 app.use('/api/users', usersRouter);
 app.use('/api/todo', todoRouter);
