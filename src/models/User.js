@@ -5,7 +5,8 @@ const Schema = mongoose.Schema;
 const UserSchema = new Schema({
     name: String,
     email: String,
-    token: String
+    token: String,
+    confirmed: Boolean
 });
 
 UserSchema.plugin(MongooseBcrypt);

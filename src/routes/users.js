@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User';
 import TodoList from '../models/TodoList';
 import config from '../config';
+import { confirmEmail }from '../helpers';
 
 const router = express.Router();
 
@@ -30,10 +31,17 @@ router.post('/createuser', async function(req, res) {
             name: name,
             email: email,
             password: password,
+            confirmed: false,
             token: 'fakefornow'
         });
 
         const newlyCreatedUser = await newUser.save();
+
+        // Send confirm email to user's new email address
+        const token = jwt.sign(newlyCreatedUser.toJSON(), config.emailSecret, {
+            expiresIn: 86400
+        });
+        confirmEmail(email, token);
 
         // Create the user's first todo list
         let newTodoList = new TodoList({
@@ -48,10 +56,36 @@ router.post('/createuser', async function(req, res) {
     }
 });
 
+router.get('/confirmemail/:token', async function(req, res) {
+    try {
+        const schema = {
+            token: Joi.string().required(),
+        };
+
+        await Joi.validate(req.params, schema);
+
+        // confirm token
+        const { token } = req.params;
+
+        const { _id } = jwt.verify(token, config.emailSecret);
+        console.log('id is: ', _id);
+
+        const result = await User.updateOne({_id: _id}, { $set: { confirmed: true } });
+
+        if (result.nModified !== 1) return res.status(400).send('Unable to confirm token');
+
+        res.redirect('http://localhost:8080/login');
+    } catch(e) {
+        res.status(400).send(e);
+    }
+});
+
 router.post('/login', async function(req, res) {
     try {
         passport.authenticate('local', { session: false }, (e, user) => {
             if (e || !user) return res.status(400).send(e);
+
+            if (!user.confirmed) return res.status(400).send('Please confirm your email address.');
 
             req.login(user, {session: false}, async function(e) {
                 if (e) return res.status(500).send(e);
