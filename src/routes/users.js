@@ -110,15 +110,24 @@ router.post('/login', async function(req, res) {
 
 router.post('/changepassword', passport.authenticate('jwt', { session: false }), async function(req, res) {
     try {
+
+        console.log(req.body);
         const schema = {
             id: Joi.string().required(),
+            currentPassword: Joi.string().min(6).required(),
             password: Joi.string().min(6).required(),
             confirmPassword: Joi.string().valid(Joi.ref('password')).required()
         };
 
         await Joi.validate(req.body, schema);
 
-        const { id, password } = req.body;
+        const { id, currentPassword, password } = req.body;
+
+        const currentPasswordMatches = await User.findOne({ _id: id });
+
+        console.log(currentPasswordMatches);
+
+        if (!currentPasswordMatches) return res.status(400).send('Could not update password');
 
         const updatePassword = await User.updateOne({ _id: id }, { $set: { password: password } });
 
@@ -140,6 +149,7 @@ router.post('/changepassword', passport.authenticate('jwt', { session: false }),
 
         res.send(userObject);
     } catch(e) {
+        console.log(e);
         res.status(400).send(e);
     }
 });
